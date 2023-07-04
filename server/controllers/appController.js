@@ -1,5 +1,22 @@
 import UserModel from "../model/User.model.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import ENV from '../config.js'
+
+/** Middleware for verify user */
+export async function verifyUser(req, res, next){
+    try {
+        const { username } = req.method == "GET" ? req.query : req.body
+
+        let exist = await UserModel.findOne({ username })
+        if(!exist) return res.status(404).send({ error: "Can't fin user!" })
+        next()
+    } catch (error) {
+        return res.status(404).send({
+            error: "Authentication Error",
+        });
+    }
+}
 
 /** ⁡⁢⁢⁣𝗣𝗢𝗦𝗧 𝗵𝘁𝘁𝗽:𝗹𝗼𝗰𝗮𝗹𝗵𝗼𝘀𝘁:𝟴𝟬𝟴𝟬/𝗮𝗽𝗶/𝗿𝗲𝗴𝗶𝘀𝘁𝗲𝗿
  * ⁡⁣⁢⁣@𝗽𝗮𝗿𝗮𝗺⁡ ⁡⁢⁣⁣: {
@@ -82,12 +99,70 @@ export async function register(req, res) {
  */
 
 export async function login(req, res) {
-    res.json("Login route");
+    const { username, password } = req.body;
+
+    try {
+        UserModel.findOne({ username })
+            .then((user) => {
+                bcrypt
+                    .compare(password, user.password)
+                    .then((passwordCheck) => {
+                        if (!passwordCheck) return res.status;
+
+                        // Create JWT
+                        const token =  jwt.sign(
+                            {
+                                user: user._id,
+                                username: user.username,
+                            },
+                            ENV.JWT_SECRET,
+                            { expiresIn: "24h" }
+                        );
+
+                        return res.status(200).send({
+                            msg: "Login Succesful",
+                            username: user.username,
+                            token
+                        })
+                    })
+                    .catch((error) => {
+                        return res.status(400).send({
+                            error: "Password does not match",
+                        });
+                    });
+            })
+            .catch((error) => {
+                return res.status(404).send({
+                    error: "Username not found",
+                });
+            });
+    } catch (error) {
+        return res.status(500).send(error);
+    }
 }
 
 /** ⁡⁢⁢⁣⁡⁢⁢⁣𝗚𝗘𝗧 𝗵𝘁𝘁𝗽:𝗹𝗼𝗰𝗮𝗹𝗵𝗼𝘀𝘁:𝟴𝟬𝟴𝟬/𝗮𝗽𝗶/𝘂𝘀𝗲𝗿/𝗲𝘅𝗮𝗺𝗽𝗹𝗲𝟭𝟮𝟯⁡ */
 export async function getUser(req, res) {
-    res.json("GetUser route");
+    const { username } = req.body
+
+    try {
+        if(!username) return res.status(501).send({ error: "Invalid Username" })
+
+        UserModel.findOne({ username }, function(err, user) {
+            if(err) return res.status(500).send({ err })
+            if(!user) return res.status(501).send({ error: "Couldn't Find the User" })
+            
+            /** Remove Password from user */
+            // Mongoose return unnecessary data with object so convert it into json
+            const { password, ...rest } = Object.assign({}, user.toJSON()); 
+
+            return res.status(201).send(rest)
+        })
+    } catch (error) {
+        return res.status(404).send({
+            error: "Cannot Find User Data",
+        });
+    }
 }
 
 /** ⁡⁢⁢⁣𝗣𝗨𝗧 𝗵𝘁𝘁𝗽:𝗹𝗼𝗰𝗮𝗹𝗵𝗼𝘀𝘁:𝟴𝟬𝟴𝟬/𝗮𝗽𝗶/⁡⁢⁢⁣𝘂𝗽𝗱𝗮𝘁𝗲𝗨𝘀𝗲𝗿⁡

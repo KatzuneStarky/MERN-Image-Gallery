@@ -11,7 +11,7 @@ router.route('/register').post(controller.register) // ⁡⁣⁢⁣𝗥𝗲𝗴�
 
 router.route('/authenticate').post((req, res) => { res.end() }) // ⁡⁣⁢⁣𝗔𝘂𝘁𝗵𝗲𝗻𝘁𝗶𝗰𝗮𝘁𝗲 𝗨𝘀𝗲𝗿⁡
 
-router.route('/login').post(controller.login) // ⁡⁣⁢⁣𝗟𝗼𝗴𝗶𝗻 𝗶𝗻 𝗔𝗽𝗽⁡
+router.route('/login').post(controller.verifyUser, controller.login) // ⁡⁣⁢⁣𝗟𝗼𝗴𝗶𝗻 𝗶𝗻 𝗔𝗽𝗽⁡
 
 /* ⁡⁢⁣⁣𝗚𝗘𝗧 𝗠𝗲𝘁𝗵𝗼𝗱𝘀⁡ */
 
